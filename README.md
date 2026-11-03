@@ -150,6 +150,4 @@ project-2_ulyankin_-26-555/
 
 ## Демонстрация
 
-[![asciicast](https://asciinema.org/a/XXXXX.svg)](https://asciinema.org/a/XXXXX)
-
-> Замените `XXXXX` на идентификатор вашей записи на asciinema.org.
+[![asciicast](https://asciinema.org/a/PQsqFyeT6ry15AyG.svg)] (https://asciinema.org/a/PQsqFyeT6ry15AyG)
