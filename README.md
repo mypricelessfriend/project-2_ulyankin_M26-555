@@ -84,6 +84,48 @@ database
 итерации цикла и перезаписывается после успешных `create_table` и
 `drop_table`. Удаление `db_meta.json` равносильно «пустой» базе.
 
+## CRUD-операции
+
+Данные каждой таблицы хранятся в `data/<имя_таблицы>.json`. Все команды выполняются в интерактивном цикле `database`.
+
+| Команда | Описание |
+|---|---|
+| `insert into <таблица> values (<v1>, <v2>, ...)` | Добавить запись. `ID` генерируется автоматически. |
+| `select from <таблица>` | Показать все записи. |
+| `select from <таблица> where <столбец> = <значение>` | Показать записи по условию. |
+| `update <таблица> set <столбец> = <значение> where <столбец> = <значение>` | Обновить записи. |
+| `delete from <таблица> where <столбец> = <значение>` | Удалить записи. |
+| `info <таблица>` | Схема таблицы и количество записей. |
+
+**Правила ввода значений:**
+
+- Строки — **всегда в кавычках**: `"Sergei"` или `'Sergei'`.
+- Числа — без кавычек: `28`.
+- Логические — `true` / `false` (без кавычек).
+- В `insert` указываются **все столбцы, кроме `ID`**.
+- Все поля обязательны.
+
+Пример:
+
+```text
+>>> Введите команду: create_table users name:str age:int is_active:bool
+>>> Введите команду: insert into users values ("Sergei", 28, true)
+>>> Введите команду: insert into users values ("Anna", 34, false)
+>>> Введите команду: select from users
++----+--------+-----+-----------+
+| ID |  name  | age | is_active |
++----+--------+-----+-----------+
+| 1  | Sergei | 28  |    True   |
+| 2  |  Anna  | 34  |   False   |
++----+--------+-----+-----------+
+>>> Введите команду: update users set age = 29 where name = "Sergei"
+>>> Введите команду: delete from users where ID = 2
+>>> Введите команду: info users
+Таблица: users
+Столбцы: ID:int, name:str, age:int, is_active:bool
+Количество записей: 1
+```
+
 ### Пример использования
 
 ```text
@@ -131,7 +173,47 @@ database
   }
 }
 ```
+## CRUD-операции
 
+Данные каждой таблицы хранятся в `data/<имя_таблицы>.json`. Все команды выполняются в интерактивном цикле `database`.
+
+| Команда | Описание |
+|---|---|
+| `insert into <таблица> values (<v1>, <v2>, ...)` | Добавить запись. `ID` генерируется автоматически. |
+| `select from <таблица>` | Показать все записи. |
+| `select from <таблица> where <столбец> = <значение>` | Показать записи по условию. |
+| `update <таблица> set <столбец> = <значение> where <столбец> = <значение>` | Обновить записи. |
+| `delete from <таблица> where <столбец> = <значение>` | Удалить записи. |
+| `info <таблица>` | Схема таблицы и количество записей. |
+
+**Правила ввода значений:**
+
+- Строки — **всегда в кавычках**: `"Sergei"` или `'Sergei'`.
+- Числа — без кавычек: `28`.
+- Логические — `true` / `false` (без кавычек).
+- В `insert` указываются **все столбцы, кроме `ID`**.
+- Все поля обязательны.
+
+Пример:
+
+```text
+>>> Введите команду: create_table users name:str age:int is_active:bool
+>>> Введите команду: insert into users values ("Sergei", 28, true)
+>>> Введите команду: insert into users values ("Anna", 34, false)
+>>> Введите команду: select from users
++----+--------+-----+-----------+
+| ID |  name  | age | is_active |
++----+--------+-----+-----------+
+| 1  | Sergei | 28  |    True   |
+| 2  |  Anna  | 34  |   False   |
++----+--------+-----+-----------+
+>>> Введите команду: update users set age = 29 where name = "Sergei"
+>>> Введите команду: delete from users where ID = 2
+>>> Введите команду: info users
+Таблица: users
+Столбцы: ID:int, name:str, age:int, is_active:bool
+Количество записей: 1
+```
 ## Структура проекта
 
 ```text
@@ -151,3 +233,5 @@ project-2_ulyankin_-26-555/
 ## Демонстрация
 
 [![asciicast](https://asciinema.org/a/PQsqFyeT6ry15AyG.svg)] (https://asciinema.org/a/PQsqFyeT6ry15AyG)
+
+[![asciicast](https://asciinema.org/a/Me2an1S9Z567BJCK.svg)](https://asciinema.org/a/Me2an1S9Z567BJCK)
