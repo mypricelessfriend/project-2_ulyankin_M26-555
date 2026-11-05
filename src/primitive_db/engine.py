@@ -12,6 +12,7 @@ from primitive_db.core import (
     select,
     update,
 )
+from primitive_db.decorators import create_cacher
 from primitive_db.utils import (
     DB_META_FILE,
     delete_table_data,
@@ -20,6 +21,8 @@ from primitive_db.utils import (
     save_metadata,
     save_table_data,
 )
+
+_cache = create_cacher()
 
 INSERT_RE = re.compile(r"^insert\s+into\s+(\S+)\s+values\s*\((.+)\)\s*$", re.IGNORECASE | re.DOTALL)
 SELECT_ALL_RE = re.compile(r"^select\s+from\s+(\S+)\s*$", re.IGNORECASE)
@@ -57,7 +60,6 @@ def welcome() -> None:
 
 
 def parse_value(raw: str):
-    """Разбирает литерал: строка в кавычках, true/false, int, float."""
     raw = raw.strip()
     if len(raw) >= 2 and raw[0] == raw[-1] and raw[0] in ('"', "'"):
         return raw[1:-1]
@@ -78,7 +80,6 @@ def parse_value(raw: str):
 
 
 def split_values(s: str) -> list:
-    """Делит строку значений по запятым, уважая кавычки."""
     values, current = [], []
     in_quote = None
     escape = False
@@ -105,7 +106,6 @@ def split_values(s: str) -> list:
 
 
 def parse_condition(s: str) -> tuple[str, object]:
-    """`age = 28` -> ('age', 28)."""
     m = re.match(r"^\s*(\S+)\s*=\s*(.+?)\s*$", s, re.DOTALL)
     if not m:
         raise ValueError(f"не удалось разобрать условие: {s}")
@@ -126,7 +126,9 @@ def _handle_create_table(metadata: dict, user_input: str) -> None:
         print("Использование: create_table <имя_таблицы> <столбец1:тип> ...")
         return
     new_metadata = create_table(metadata, m.group(1), m.group(2).split())
-    save_metadata(DB_META_FILE, new_metadata)
+    if new_metadata is not None:
+        save_metadata(DB_META_FILE, new_metadata)
+        _cache.clear()
 
 
 def _handle_drop_table(metadata: dict, user_input: str) -> None:
@@ -136,9 +138,10 @@ def _handle_drop_table(metadata: dict, user_input: str) -> None:
         return
     name = m.group(1)
     new_metadata = drop_table(metadata, name)
-    save_metadata(DB_META_FILE, new_metadata)
-    if name not in new_metadata:
+    if new_metadata is not None and name not in new_metadata:
+        save_metadata(DB_META_FILE, new_metadata)
         delete_table_data(name)
+        _cache.clear()
 
 
 def _handle_insert(metadata: dict, user_input: str) -> None:
@@ -155,6 +158,7 @@ def _handle_insert(metadata: dict, user_input: str) -> None:
     new_data = insert(metadata, table_name, values)
     if new_data is not None:
         save_table_data(table_name, new_data)
+        _cache.clear()
 
 
 def _handle_select(metadata: dict, user_input: str) -> None:
@@ -178,8 +182,11 @@ def _handle_select(metadata: dict, user_input: str) -> None:
     if table_name not in metadata:
         print(f"Ошибка: таблица '{table_name}' не существует.")
         return
-    data = load_table_data(table_name)
-    rows = select(data, where)
+
+    key = (table_name, tuple(sorted(where.items())) if where else None)
+    rows = _cache(key, lambda: select(table_name, where))
+    if rows is None:
+        return
     _print_rows(rows, metadata[table_name]["columns"])
 
 
@@ -200,11 +207,12 @@ def _handle_update(metadata: dict, user_input: str) -> None:
         return
 
     data = load_table_data(table_name)
-    new_data, updated_ids = update(data, {set_col: set_val}, {where_col: where_val})
-    if not updated_ids:
-        print("Ошибка: ни одна запись не подходит под условие.")
+    result = update(data, {set_col: set_val}, {where_col: where_val})
+    if result is None:
         return
+    new_data, updated_ids = result
     save_table_data(table_name, new_data)
+    _cache.clear()
     for rid in updated_ids:
         print(f'Запись с ID={rid} в таблице "{table_name}" успешно обновлена.')
 
@@ -225,11 +233,12 @@ def _handle_delete(metadata: dict, user_input: str) -> None:
         return
 
     data = load_table_data(table_name)
-    new_data, deleted_ids = delete(data, {where_col: where_val})
-    if not deleted_ids:
-        print("Ошибка: ни одна запись не подходит под условие.")
+    result = delete(data, {where_col: where_val})
+    if result is None:
         return
+    new_data, deleted_ids = result
     save_table_data(table_name, new_data)
+    _cache.clear()
     for rid in deleted_ids:
         print(f'Запись с ID={rid} успешно удалена из таблицы "{table_name}".')
 
@@ -244,7 +253,6 @@ def _handle_info(metadata: dict, user_input: str) -> None:
 
 def _handle_command(metadata: dict, user_input: str) -> None:
     command = user_input.split(maxsplit=1)[0].lower()
-
     if command == "exit":
         raise SystemExit
     if command == "help":
@@ -271,7 +279,6 @@ def _handle_command(metadata: dict, user_input: str) -> None:
 
 def run() -> None:
     welcome()
-
     while True:
         metadata = load_metadata(DB_META_FILE)
         try:
