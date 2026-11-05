@@ -214,6 +214,22 @@ database
 Столбцы: ID:int, name:str, age:int, is_active:bool
 Количество записей: 1
 ```
+
+## Обработка ошибок и подтверждения
+
+- Все операции с БД обёрнуты декоратором `handle_db_errors`: ошибки
+  (`KeyError`, `ValueError`, `FileNotFoundError`) перехватываются
+  централизованно и печатаются сообщением, программа не падает.
+- Опасные операции (`drop_table`, `delete`) защищены декоратором
+  `confirm_action`: перед выполнением запрашивается подтверждение
+  `[y/n]`. Любой ответ, кроме `y`, отменяет операцию.
+- Медленные операции (`insert`, `select`) обёрнуты декоратором
+  `log_time`: после выполнения печатается
+  `Функция <имя> выполнилась за X.XXX секунд.`
+- Результаты `select` кэшируются в замыкании `create_cacher()`.
+  Кэш сбрасывается после любых изменений (`insert`, `update`, `delete`,
+  `create_table`, `drop_table`), поэтому данные всегда актуальны.
+
 ## Структура проекта
 
 ```text
@@ -235,3 +251,5 @@ project-2_ulyankin_-26-555/
 [![asciicast](https://asciinema.org/a/PQsqFyeT6ry15AyG.svg)] (https://asciinema.org/a/PQsqFyeT6ry15AyG)
 
 [![asciicast](https://asciinema.org/a/Me2an1S9Z567BJCK.svg)](https://asciinema.org/a/Me2an1S9Z567BJCK)
+
+[![asciicast](https://asciinema.org/a/YxGtBPN1MGIyqBF3.svg)](https://asciinema.org/a/YxGtBPN1MGIyqBF3)
